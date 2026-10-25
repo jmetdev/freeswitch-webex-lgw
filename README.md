@@ -48,3 +48,9 @@ Compose on a VPS is the primary path. Other options (Podman, cloud-init, Ansible
 ## Consumers
 
 Projects such as CCC recording portal can deploy this image and add their own dialplan overlays separately — this repo stays Webex-LGW-only.
+
+From workspace root: `make deploy-webex` (uses `COMPOSE_MODE=pull` and `ghcr.io/jmetdev/freeswitch-webex-lgw:latest` by default).
+
+### Migrating from `/opt/ccc-freeswitch-webex`
+
+On an existing host, copy `runtime/config/vars.xml` and `.env` into `/opt/freeswitch-webex-lgw`, then run deploy with `REMOTE_DIR=/opt/freeswitch-webex-lgw`. Stop the old compose stack under `/opt/ccc-freeswitch-webex` when satisfied.
