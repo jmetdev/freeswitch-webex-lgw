@@ -1,0 +1,20 @@
+<include>
+  <context name="default">
+    <extension name="health_check">
+      <condition field="destination_number" expression="^9191$">
+        <action application="answer"/>
+        <action application="playback" data="tone_stream://%(2000,4000,440,480)"/>
+        <action application="hangup"/>
+      </condition>
+    </extension>
+  </context>
+
+  <context name="public">
+    <extension name="unloop">
+      <condition field="${unroll_loops}" expression="^true$"/>
+      <condition field="${sip_looped_call}" expression="^true$">
+        <action application="deflect" data="${destination_number}"/>
+      </condition>
+    </extension>
+  </context>
+</include>

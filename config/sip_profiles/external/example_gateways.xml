@@ -1,0 +1,19 @@
+<include>
+  <!--
+    Webex Calling registration trunk: see webex_gateway.xml in this directory.
+    Fill in the webex_* values in vars.xml to activate it.
+  -->
+
+  <!--
+    Example CUCM SIP trunk (adjust transport per deployment).
+
+  <gateway name="cucm">
+    <param name="proxy" value="cucm.example.com"/>
+    <param name="register" value="false"/>
+    <param name="register-transport" value="udp"/>
+    <param name="context" value="public"/>
+    <param name="caller-id-in-from" value="true"/>
+    <param name="extension-in-contact" value="true"/>
+  </gateway>
+  -->
+</include>

@@ -1,0 +1,50 @@
+services:
+  freeswitch:
+    image: ${IMAGE:-ghcr.io/jmetdev/freeswitch-webex-lgw}:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        FREESWITCH_VERSION: ${FREESWITCH_VERSION:-v1.11.1}
+    container_name: freeswitch
+    restart: unless-stopped
+    cap_add:
+      - SYS_NICE
+    network_mode: host
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      FS_PROFILE: ${FS_PROFILE:-webex}
+      ESL_PASSWORD: ${ESL_PASSWORD:-ChangeMe-ESL-Password}
+      EXTERNAL_SIP_IP: ${EXTERNAL_SIP_IP:-}
+      EXTERNAL_RTP_IP: ${EXTERNAL_RTP_IP:-}
+      WEBEX_REGISTRAR: ${WEBEX_REGISTRAR:-}
+      WEBEX_OUTBOUND_PROXY: ${WEBEX_OUTBOUND_PROXY:-}
+      WEBEX_LINE_PORT: ${WEBEX_LINE_PORT:-}
+      WEBEX_USERNAME: ${WEBEX_USERNAME:-}
+      WEBEX_PASSWORD: ${WEBEX_PASSWORD:-}
+      WEBEX_OTG: ${WEBEX_OTG:-}
+      WEBEX_CONTACT_FQDN: ${WEBEX_CONTACT_FQDN:-}
+    volumes:
+      - ./runtime/config:/etc/freeswitch
+      - ./runtime/logs:/var/log/freeswitch
+      - ./runtime/recordings:/var/lib/freeswitch/recordings
+      - ./runtime/fax:/var/spool/fax
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "fs_cli",
+          "-H",
+          "127.0.0.1",
+          "-P",
+          "8021",
+          "-p",
+          "ChangeMe-ESL-Password",
+          "-x",
+          "status",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
