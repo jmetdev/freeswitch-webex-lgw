@@ -96,6 +96,9 @@ WEBEX_PASSWORD:webex_password
 WEBEX_OTG:webex_otg"
 
   while IFS=: read -r env_name xml_name; do
-    [[ -n "${!env_name:-}" ]] && vars_xml_set "$file" "$xml_name" "${!env_name}"
+    [[ -n "${env_name:-}" && -n "${!env_name:-}" ]] && vars_xml_set "$file" "$xml_name" "${!env_name}"
   done <<< "$map"
+  # `read` returns 1 at EOF. Under `set -e` that becomes this function's status
+  # and aborts sync-config-to-runtime.sh after the file is already written.
+  return 0
 }
