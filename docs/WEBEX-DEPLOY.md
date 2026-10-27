@@ -95,9 +95,10 @@ dig +short SRV _sips._tcp.da07.sipconnect-us.bcld.webex.com @8.8.8.8
 Store the **Control Hub outbound proxy hostname** (no port) in `webex_outbound_proxy`, then resolve SRV before restart:
 
 ```bash
-./deploy/resolve-webex-srv.sh /opt/freeswitch-webex-lgw/runtime/config/vars.xml
+./scripts/resolve-webex-srv.sh /opt/freeswitch-webex-lgw/runtime/config/vars.xml
 docker exec freeswitch fs_cli -H 127.0.0.1 -P 8021 -p ChangeMe-ESL-Password -x "reloadxml"
 docker exec freeswitch fs_cli -H 127.0.0.1 -P 8021 -p ChangeMe-ESL-Password -x "sofia profile external restart"
+./scripts/webex-register-status.sh
 ```
 
 FreeSWITCH `sofia_dig da07.sipconnect-us.bcld.webex.com` also resolves targets inside the container.
@@ -138,8 +139,11 @@ at the registrar FQDN alone — registration will fail with DNS or timeout error
 | `realm` | **`BroadWorks`** — digest realm from Webex; **not** the registrar domain |
 | `from-domain` | Registrar FQDN (identity in From/Contact only) |
 
-Set `webex_outbound_proxy` in `vars.xml` to the Control Hub outbound proxy host **including `:8934`**.
-Keep `webex_registrar` as the Control Hub registrar FQDN for headers; signaling uses the proxy.
+Paste the Control Hub outbound proxy **hostname only** (no port) into `webex_outbound_proxy`.
+The container entrypoint, or `scripts/resolve-webex-srv.sh`, rewrites it to the SRV target
+`host:8934` before Sofia starts. Keep `webex_registrar` as the Control Hub registrar FQDN
+for From/To; signaling uses the proxy. `webex_line_port` is the Line/Port user part only.
+A value of `user@registrar` becomes `user@registrar@registrar` in the From header and Webex answers `401`.
 
 
 ## Ports / firewall
@@ -164,8 +168,9 @@ Outbound: TLS to Webex on port **8934** (via DNS SRV on `webex_outbound_proxy`).
 Run from workspace root:
 
 ```bash
-./deploy/debug-webex-registration.sh
-# logs → /tmp/freeswitch-webex-lgw-debug.log
+./scripts/webex-register-status.sh          # State should be REGED
+./scripts/webex-siptrace.sh on              # watch REGISTER / OPTIONS
+./scripts/resolve-webex-srv.sh runtime/config/vars.xml
 ```
 
 ### Common failure modes (with runtime evidence)
@@ -176,6 +181,7 @@ Run from workspace root:
 | `FAIL_WAIT`, cannot connect to `da07…` | Control Hub proxy hostname has **SRV only**, no A record; FreeSWITCH may not SRV-resolve the proxy | Resolve SRV manually and set `webex_outbound_proxy` to `<srv-target>:8934` |
 | `401` then `403` / never `REGED` | Wrong **realm** (must be `BroadWorks`, not registrar domain) or **auth-username** ≠ trunk username | Split Line/Port (`username`) from digest user (`auth-username`) |
 | `401` loop | Same value used for Line/Port and trunk username | `webex_line_port` ≠ `webex_username` in vars.xml |
+| `401` loop, From is `user@domain@domain` | `webex_line_port` includes `@registrar` | Set `WEBEX_LINE_PORT` to the user part only |
 | TLS handshake error | `external_tls_verify_policy=out` without `cafile.pem` | Entrypoint seeds CA bundle; temporarily set policy to `none` for debug only |
 | `FAIL_WAIT` after `make deploy-webex` | Credentials wiped | Fixed: deploy merges `webex_*` from server runtime vars |
 

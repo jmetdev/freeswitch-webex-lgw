@@ -29,7 +29,7 @@
     <param name="ping" value="30"/>
     <param name="extension" value="$${webex_line_port}"/>
     <!-- Enable AFTER Control Hub provisions webex_contact_fqdn for this trunk:
-         ./deploy/enable-webex-contact-fqdn.sh (otherwise REGISTER → FAIL_WAIT) -->
+         ./scripts/enable-webex-contact-fqdn.sh (otherwise REGISTER → FAIL_WAIT) -->
     <!-- <param name="extension-in-contact" value="true"/> -->
     <!-- <param name="contact-host" value="$${webex_contact_fqdn}"/> -->
     <param name="context" value="public"/>

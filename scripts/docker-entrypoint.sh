@@ -34,10 +34,19 @@ if [ -f "${DEFAULT_CONFIG}/fs_cli.conf" ]; then
   cp -f "${DEFAULT_CONFIG}/fs_cli.conf" /etc/fs_cli.conf
 fi
 
-# Optional: patch ESL password from env into event_socket.conf
-if [ -n "${ESL_PASSWORD:-}" ] && [ -f "${LIVE_CONFIG}/autoload_configs/event_socket.conf.xml" ]; then
-  sed -i "s|data=\"password\" value=\"[^\"]*\"|data=\"password\" value=\"${ESL_PASSWORD}\"|" \
-    "${LIVE_CONFIG}/autoload_configs/event_socket.conf.xml" 2>/dev/null || true
+# event_socket.conf.xml uses name="password", not data="password".
+ESL_CONF="${LIVE_CONFIG}/autoload_configs/event_socket.conf.xml"
+if [ -n "${ESL_PASSWORD:-}" ] && [ -f "${ESL_CONF}" ]; then
+  sed -i "s|name=\"password\" value=\"[^\"]*\"|name=\"password\" value=\"${ESL_PASSWORD}\"|" \
+    "${ESL_CONF}" 2>/dev/null || true
+  if [ -f /etc/fs_cli.conf ]; then
+    sed -i "s|name=\"password\" value=\"[^\"]*\"|name=\"password\" value=\"${ESL_PASSWORD}\"|" \
+      /etc/fs_cli.conf 2>/dev/null || true
+  fi
+fi
+if [ -n "${ESL_LISTEN_IP:-}" ] && [ -f "${ESL_CONF}" ]; then
+  sed -i "s|name=\"listen-ip\" value=\"[^\"]*\"|name=\"listen-ip\" value=\"${ESL_LISTEN_IP}\"|" \
+    "${ESL_CONF}" 2>/dev/null || true
 fi
 
 CERTS_DIR="${LIVE_CONFIG}/certs"
