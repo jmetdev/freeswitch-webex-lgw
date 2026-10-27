@@ -9,8 +9,9 @@
     </extension>
 
     <!--
-      Outbound to Webex Calling. The From URI carries the trunk group OTG tag,
-      which Webex uses to associate the call with the registration trunk.
+      Outbound to Webex Calling. The From URI must carry the same ;otg= tag the
+      gateway puts on REGISTER and OPTIONS (from-domain in webex_gateway.xml).
+      That tag, not a DNS name, is how Webex associates the call with the trunk.
     -->
     <extension name="webex_outbound">
       <condition field="destination_number" expression="^(\+?\d{7,15})$">

@@ -9,4 +9,6 @@
   <X-PRE-PROCESS cmd="set" data="webex_line_port=CHANGE_ME_LGU"/>
   <X-PRE-PROCESS cmd="set" data="webex_username=CHANGE_ME_LGU"/>
   <X-PRE-PROCESS cmd="set" data="webex_password=CHANGE_ME"/>
+  <!-- Trunk group tag. Must appear as ;otg= on REGISTER, OPTIONS, and INVITE From.
+       Missing tag: Sofia REGED, Control Hub stays Unknown. Not a DNS name. -->
   <X-PRE-PROCESS cmd="set" data="webex_otg=CHANGE_ME_lgu"/>

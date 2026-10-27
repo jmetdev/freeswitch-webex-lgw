@@ -57,7 +57,7 @@ Add Trunk → Registration based**):
 | `webex_line_port` | Line/Port user part (before `@`) |
 | `webex_username` | Trunk username (digest auth) |
 | `webex_password` | Trunk password |
-| `webex_otg` | Outbound trunk group tag |
+| `webex_otg` | Outbound trunk group tag. Required on the From URI as `;otg=`. This is what moves Control Hub from Unknown to Online |
 
 Then reload:
 
@@ -68,7 +68,7 @@ docker exec freeswitch fs_cli -x "sofia profile external restart"
 docker exec freeswitch fs_cli -x "sofia status gateway webex"
 ```
 
-**Registration OK** shows `State REGED`. Until credentials are pasted, expect `FAIL_WAIT` or auth errors.
+**Registration OK** shows `State REGED`. Until credentials are pasted, expect `FAIL_WAIT` or auth errors. **REGED is not Control Hub Online.** Online also requires `;otg=` on the From URI. See [Why Control Hub stays Unknown](#why-control-hub-stays-unknown-while-sofia-shows-reged).
 
 ## CUBE Local Gateway impersonation
 
@@ -76,10 +76,11 @@ Control Hub shows device type **Cisco CUBE Local Gateway**. FreeSWITCH is not ce
 
 | CUBE IOS XE | FreeSWITCH | Runtime note |
 |-------------|------------|--------------|
-| `registrar dns:16855334…bcld.webex.com` | `from-domain` = `webex_registrar` | **No public A/SRV DNS** — identity in From/To only |
+| `registrar dns:16855334…bcld.webex.com` | `from-user` = Line/Port, host = `webex_registrar` | Registrar name is an identity, not a public DNS target |
+| `sip-profiles` rule 80: `From` `>` → `;otg=<tag>>` | `from-domain` = `$${webex_registrar};otg=$${webex_otg}` | **This is the step that gets Control Hub Online.** Same tag on outbound INVITEs in the dialplan |
 | `outbound-proxy dns:da07…sipconnect…` | `proxy` + `register-proxy` = `webex_outbound_proxy` | **SRV lives here**: `_sips._tcp.da07…` → `sse-b5…:8934` |
 | `credentials … realm BroadWorks` | `realm=BroadWorks`, `auth-username` ≠ Line/Port | Digest auth |
-| Contact rewrite to LGW FQDN | `contact-host` + `extension-in-contact` | **Must match FQDN provisioned in Control Hub** |
+| Contact left as the public IP | `contact-host` stays commented | Registration trunks have no Control Hub FQDN. An FQDN Contact is the certificate-based model and Webex rejects the REGISTER |
 
 ### Registrar vs outbound proxy (SRV is dynamic on da07, not registrar)
 
@@ -105,14 +106,24 @@ FreeSWITCH `sofia_dig da07.sipconnect-us.bcld.webex.com` also resolves targets i
 
 ### Why Control Hub stays "Unknown" while Sofia shows REGED
 
-Webex requires **Contact header with the LGW FQDN provisioned in Control Hub** (Cisco sip-profile Contact rewrite). Runtime test:
+This is a **registration-based** trunk. Control Hub does not ask for a DNS name on that trunk type. A public FQDN in the Contact header is the **certificate-based** model. Putting one on a registration trunk makes REGISTER fail (`TRYING`). Leave `extension-in-contact` and `contact-host` commented, and do not run `scripts/enable-webex-contact-fqdn.sh`.
 
-| Contact header | Sofia state |
-|----------------|-------------|
-| `gw+webex@2.24.221.60:5071` (IP) | **REGED** |
-| `CloudCoreFax…@srv1608468.hstgr.cloud:5071` (FQDN) | **TRYING** (Webex rejects until FQDN is provisioned) |
+`State REGED` only means the SBC accepted digest REGISTER. Control Hub stays **Unknown** until Webex sends OPTIONS to the Contact (the public IP on port 5071) and gets `200 OK`. Webex does not start that probe unless REGISTER and OPTIONS carry the trunk group tag on the From URI:
 
-**Fix:** In Control Hub, configure the trunk/LGW FQDN to `srv1608468.hstgr.cloud` (must resolve to `2.24.221.60`), then uncomment `extension-in-contact` + `contact-host` in `webex_gateway.xml`.
+```text
+From: <sip:LINEPORT@REGISTRAR;otg=WEBEX_OTG>
+```
+
+That is CUBE `voice class sip-profiles` rule 80: `request ANY sip-header From modify ">" ";otg=<otg>>"`. FreeSWITCH sets it with `from-domain` = `$${webex_registrar};otg=$${webex_otg}` in `profiles/webex/sip_profiles/external/webex_gateway.xml`. Outbound INVITEs set the same URI via `sip_invite_full_from` in the Webex dialplan. Both have to match.
+
+This is the step that gets lost on every new host. Confirmed 2026-10-27 on a registration trunk whose Contact was `sip:gw+webex@20.38.173.138:5071` and which had no public DNS name:
+
+| From URI | What Webex did | Sofia | Control Hub |
+|----------|----------------|-------|-------------|
+| `sip:LINEPORT@REGISTRAR` | REGISTER `200`, our OPTIONS `200`, no OPTIONS sent back to the Contact | **REGED** | **Unknown** |
+| `sip:LINEPORT@REGISTRAR;otg=WEBEX_OTG` | Same REGISTER stayed up. Within one ping cycle Webex sent `OPTIONS sip:<public-ip>:5071` on the existing TLS connection and we answered `200` | **REGED** | **Online** after the Control Hub refresh (~3 min) |
+
+Check with `./scripts/webex-siptrace.sh on`. The From header of both REGISTER and OPTIONS must contain `;otg=` and the value must be `webex_otg` from Control Hub. `sofia status gateway webex` prints that From line. A trace with no inbound OPTIONS means the tag is missing or wrong, even when Status is UP.
 
 ### Check registration on docker host
 
@@ -137,12 +148,13 @@ at the registrar FQDN alone — registration will fail with DNS or timeout error
 | `register-proxy` | Same outbound proxy (REGISTER must hit the SBC, not the registrar name) |
 | `outbound-proxy` | Same outbound proxy |
 | `realm` | **`BroadWorks`** — digest realm from Webex; **not** the registrar domain |
-| `from-domain` | Registrar FQDN (identity in From/Contact only) |
+| `from-domain` | `$${webex_registrar};otg=$${webex_otg}` in `profiles/webex/sip_profiles/external/webex_gateway.xml`. The tag is what Control Hub uses to mark the trunk Online |
 
 Paste the Control Hub outbound proxy **hostname only** (no port) into `webex_outbound_proxy`.
 The container entrypoint, or `scripts/resolve-webex-srv.sh`, rewrites it to the SRV target
-`host:8934` before Sofia starts. Keep `webex_registrar` as the Control Hub registrar FQDN
-for From/To; signaling uses the proxy. `webex_line_port` is the Line/Port user part only.
+`host:8934` before Sofia starts. Keep `webex_registrar` as the Control Hub registrar name
+(it has no public DNS). The From URI is that name plus `;otg=<webex_otg>`. Signaling uses
+the proxy. `webex_line_port` is the Line/Port user part only.
 A value of `user@registrar` becomes `user@registrar@registrar` in the From header and Webex answers `401`.
 
 
@@ -184,6 +196,7 @@ Run from workspace root:
 | `401` loop, From is `user@domain@domain` | `webex_line_port` includes `@registrar` | Set `WEBEX_LINE_PORT` to the user part only |
 | TLS handshake error | `external_tls_verify_policy=out` without `cafile.pem` | Entrypoint seeds CA bundle; temporarily set policy to `none` for debug only |
 | `FAIL_WAIT` after `make deploy-webex` | Credentials wiped | Fixed: deploy merges `webex_*` from server runtime vars |
+| **REGED / UP, Control Hub Unknown**, siptrace shows our OPTIONS `200` and no OPTIONS from Webex | From URI has no `;otg=` (or the tag is not `webex_otg`) | Set `from-domain` to `$${webex_registrar};otg=$${webex_otg}`, `reloadxml`, `sofia profile external restart`. Do not add a Contact FQDN |
 
 ### SRV target rotation
 
@@ -259,7 +272,8 @@ If you need to rotate trunk credentials, edit `runtime/config/vars.xml` on the s
 
 ## What's left
 
-- [ ] Paste Control Hub `webex_*` values into server `vars.xml`
-- [ ] Confirm `sofia status gateway webex` → `REGED`
+- [ ] Paste Control Hub `webex_*` values into server `vars.xml`, including `webex_otg`
+- [ ] Confirm `sofia status gateway webex` → `REGED` and From contains `;otg=<webex_otg>`
+- [ ] Confirm a siptrace shows Webex `OPTIONS` to the public IP and our `200 OK`, then Control Hub **Online**
 - [ ] Place test inbound/outbound calls
 - [ ] Enable and test T.38 fax dialplan

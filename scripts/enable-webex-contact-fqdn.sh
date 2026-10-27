@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Enable Contact FQDN on the Webex gateway AFTER Control Hub provisions the same FQDN.
+# Certificate-based trunks only. A registration-based trunk has no Control Hub FQDN.
+# Running this script makes REGISTER fail (TRYING). Registration trunks go Online
+# when the From URI includes ;otg=${webex_otg}. See docs/WEBEX-DEPLOY.md.
 # Usage: REMOTE=root@host REMOTE_DIR=/opt/freeswitch-webex-lgw ./scripts/enable-webex-contact-fqdn.sh
 set -euo pipefail
 
@@ -41,5 +43,6 @@ else
 fi
 
 echo
+echo "Certificate-based path only. Registration trunks should not reach this script."
 echo "Expect State REGED and Contact using webex_contact_fqdn."
-echo "If FAIL_WAIT or TRYING: Control Hub has not provisioned this FQDN yet."
+echo "If FAIL_WAIT or TRYING: this trunk is registration-based, or Control Hub has not provisioned this FQDN."

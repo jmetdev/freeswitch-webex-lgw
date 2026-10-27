@@ -14,7 +14,7 @@ docker compose up -d --build   # or pull IMAGE:TAG from GHCR
 ./scripts/webex-register-status.sh
 ```
 
-Expect `State    REGED` once Control Hub credentials and public IP are correct. **REGED ≠ Control Hub Online** — see [docs/WEBEX-DEPLOY.md](docs/WEBEX-DEPLOY.md).
+Expect `State    REGED` once Control Hub credentials and the public IP are correct. **REGED is not Control Hub Online.** A registration trunk goes Online only when the From URI is `sip:LINEPORT@REGISTRAR;otg=WEBEX_OTG`. No public DNS name is involved. See [docs/WEBEX-DEPLOY.md](docs/WEBEX-DEPLOY.md).
 
 ## Layout
 
@@ -34,7 +34,7 @@ Expect `State    REGED` once Control Hub credentials and public IP are correct. 
 | `scripts/resolve-webex-srv.sh` | Resolve sipconnect outbound proxy SRV on the host |
 | `scripts/webex-register-status.sh` | Gateway registration snapshot |
 | `scripts/webex-siptrace.sh` | Sofia SIP trace on/off |
-| `scripts/enable-webex-contact-fqdn.sh` | Uncomment Contact FQDN params after Control Hub provisions FQDN |
+| `scripts/enable-webex-contact-fqdn.sh` | Certificate-based Contact FQDN only. Do not run on a registration trunk |
 | `scripts/smoke-test.sh` | Module / ESL smoke test |
 
 ## Networking

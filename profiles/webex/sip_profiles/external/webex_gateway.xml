@@ -29,8 +29,10 @@
     <!-- CUBE/Webex: OPTIONS keepalive required for Control Hub trunk Online status -->
     <param name="ping" value="30"/>
     <param name="extension" value="$${webex_line_port}"/>
-    <!-- Enable AFTER Control Hub provisions webex_contact_fqdn for this trunk:
-         ./scripts/enable-webex-contact-fqdn.sh (otherwise REGISTER → FAIL_WAIT) -->
+    <!-- Registration trunk: leave these commented. contact-host is the
+         certificate-based FQDN model. This trunk type has no Control Hub DNS
+         name, and enabling it makes REGISTER fail (TRYING). Control Hub Online
+         comes from ;otg= on the From URI (from-domain above). -->
     <!-- <param name="extension-in-contact" value="true"/> -->
     <!-- <param name="contact-host" value="$${webex_contact_fqdn}"/> -->
     <param name="context" value="public"/>

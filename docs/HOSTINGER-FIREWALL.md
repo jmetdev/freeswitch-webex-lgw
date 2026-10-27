@@ -16,5 +16,9 @@ Outbound (usually allowed by default):
 After opening ports, verify from your Mac:
   nc -zv 2.24.221.60 5071
 
+Opening these ports lets Webex reach the Contact. Control Hub still stays Unknown
+while Sofia is REGED if the From URI is missing `;otg=<webex_otg>`. That tag, not a
+DNS name, is what makes Webex OPTIONS this host. See docs/WEBEX-DEPLOY.md.
+
 Then refresh Control Hub trunk status (~3 min) and test inbound call with:
   ssh root@srv1608468.hstgr.cloud 'timeout 30 tcpdump -i any -n tcp port 5071'
