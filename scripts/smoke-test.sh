@@ -4,6 +4,9 @@ set -euo pipefail
 IMAGE="${1:-ghcr.io/jmetdev/freeswitch-webex-lgw:latest}"
 CONTAINER="freeswitch-smoke-test-$$"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=lib/esl.sh
+source "$ROOT/scripts/lib/esl.sh"
+load_esl_password "$ROOT"
 ESL_PASSWORD="${ESL_PASSWORD:-ChangeMe-ESL-Password}"
 
 ARCH="$(uname -m)"
@@ -27,6 +30,7 @@ docker run -d --name "${CONTAINER}" --platform "${PLATFORM}" \
   -p 18021:8021 \
   --cap-add SYS_NICE \
   -e FS_PROFILE=webex \
+  -e ESL_PASSWORD="${ESL_PASSWORD}" \
   -v "${ROOT}/runtime/config:/etc/freeswitch" \
   -v "${ROOT}/runtime/logs:/var/log/freeswitch" \
   -v "${ROOT}/runtime/recordings:/var/lib/freeswitch/recordings" \

@@ -2,6 +2,11 @@
 # Print Webex gateway registration summary (run on docker host).
 set -euo pipefail
 
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=lib/esl.sh
+source "$ROOT/scripts/lib/esl.sh"
+load_esl_password "$ROOT"
+
 CONTAINER="${FS_CONTAINER:-freeswitch}"
 ESL_PASSWORD="${ESL_PASSWORD:-ChangeMe-ESL-Password}"
 
