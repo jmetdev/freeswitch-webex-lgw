@@ -18,6 +18,7 @@ services:
       FS_PROFILE: ${FS_PROFILE:-webex}
       ESL_PASSWORD: ${ESL_PASSWORD:-ChangeMe-ESL-Password}
       ESL_LISTEN_IP: ${ESL_LISTEN_IP:-}
+      ESL_ACL: ${ESL_ACL:-esl}
       EXTERNAL_SIP_IP: ${EXTERNAL_SIP_IP:-}
       EXTERNAL_RTP_IP: ${EXTERNAL_RTP_IP:-}
       WEBEX_REGISTRAR: ${WEBEX_REGISTRAR:-}

@@ -49,6 +49,23 @@ if [ -n "${ESL_LISTEN_IP:-}" ] && [ -f "${ESL_CONF}" ]; then
     "${ESL_CONF}" 2>/dev/null || true
 fi
 
+# Existing volumes keep an event socket with no apply-inbound-acl. FreeSWITCH then
+# defaults to loopback.auto and answers other containers with text/rude-rejection.
+ACL_CONF="${LIVE_CONFIG}/autoload_configs/acl.conf.xml"
+if [ ! -f "${ACL_CONF}" ] && [ -f "${DEFAULT_CONFIG}/autoload_configs/acl.conf.xml" ]; then
+  cp -f "${DEFAULT_CONFIG}/autoload_configs/acl.conf.xml" "${ACL_CONF}"
+fi
+ESL_ACL="${ESL_ACL:-esl}"
+if [ -f "${ESL_CONF}" ]; then
+  if grep -q 'name="apply-inbound-acl"' "${ESL_CONF}"; then
+    sed -i "s|name=\"apply-inbound-acl\" value=\"[^\"]*\"|name=\"apply-inbound-acl\" value=\"${ESL_ACL}\"|" \
+      "${ESL_CONF}" 2>/dev/null || true
+  else
+    sed -i "s|</settings>|    <param name=\"apply-inbound-acl\" value=\"${ESL_ACL}\"/>\n  </settings>|" \
+      "${ESL_CONF}" 2>/dev/null || true
+  fi
+fi
+
 CERTS_DIR="${LIVE_CONFIG}/certs"
 mkdir -p "${CERTS_DIR}"
 if [ ! -f "${CERTS_DIR}/agent.pem" ] && command -v openssl >/dev/null 2>&1; then

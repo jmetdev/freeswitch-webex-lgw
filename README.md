@@ -41,7 +41,7 @@ Expect `State    REGED` once Control Hub credentials and public IP are correct. 
 
 Linux VPS: use `network_mode: host` (default compose). Open inbound **TCP 5071** and **UDP 16384–32768**; outbound **TCP 8934** to Webex SBC ranges. Details: [docs/HOSTINGER-FIREWALL.md](docs/HOSTINGER-FIREWALL.md).
 
-ESL listens on `127.0.0.1:8021`, which is the host loopback. Another container on a bridge network cannot connect there. Set `ESL_LISTEN_IP` to this host's LAN address and use that address from the other app. Do not publish `8021` publicly.
+ESL listens on `127.0.0.1:8021` unless `ESL_LISTEN_IP` is set to this host's LAN address or `0.0.0.0`. Other containers must use that address. Access is the `esl` ACL (loopback and RFC1918). Without it, FreeSWITCH answers non-loopback clients with `text/rude-rejection` before password auth. Do not publish `8021` publicly.
 
 ## Deploy alternatives
 
