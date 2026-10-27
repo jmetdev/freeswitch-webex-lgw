@@ -6,7 +6,8 @@
     Registration model per Cisco CUBE LGW spec (Webex registration trunk):
       - REGISTER identity uses registrar domain in From/To (16855334…bcld.webex.com)
       - TLS connection via outbound-proxy SRV (_sips._tcp.da07… → port 8934)
-      - Contact header MUST use LGW FQDN (not IP, not gw+name) for Control Hub status
+      - Registration trunks do not use a Control Hub FQDN. The site is identified by
+        ;otg= on the From URI (CUBE sip-profile rule 80). Contact stays the public IP.
       - AOR / Contact user = Line/Port; digest auth uses separate trunk username
       - realm BroadWorks, 240s expiry, SRTP mandatory
   -->
@@ -16,7 +17,7 @@
     <param name="password" value="$${webex_password}"/>
     <param name="realm" value="BroadWorks"/>
     <param name="from-user" value="$${webex_line_port}"/>
-    <param name="from-domain" value="$${webex_registrar}"/>
+    <param name="from-domain" value="$${webex_registrar};otg=$${webex_otg}"/>
     <!-- CUBE: outbound-proxy dns:da07… — Sofia resolves SRV/NAPTR to access SBC (port 8934) -->
     <param name="proxy" value="$${webex_outbound_proxy}"/>
     <param name="register-proxy" value="$${webex_outbound_proxy}"/>
