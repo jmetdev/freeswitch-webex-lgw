@@ -11,6 +11,7 @@
     <load module="mod_dptools"/>
     <load module="mod_expr"/>
     <load module="mod_hash"/>
+    <load module="mod_conference"/>
     <load module="mod_spandsp"/>
     <load module="mod_sndfile"/>
     <load module="mod_tone_stream"/>

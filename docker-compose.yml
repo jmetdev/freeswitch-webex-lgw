@@ -28,10 +28,11 @@ services:
       WEBEX_PASSWORD: ${WEBEX_PASSWORD:-}
       WEBEX_OTG: ${WEBEX_OTG:-}
       WEBEX_CONTACT_FQDN: ${WEBEX_CONTACT_FQDN:-}
+      RECORDINGS_DIR: ${RECORDINGS_CONTAINER_DIR:-/var/lib/freeswitch/recordings}
     volumes:
       - ./runtime/config:/etc/freeswitch
       - ./runtime/logs:/var/log/freeswitch
-      - ./runtime/recordings:/var/lib/freeswitch/recordings
+      - ${RECORDINGS_HOST_DIR:-./runtime/recordings}:${RECORDINGS_CONTAINER_DIR:-/var/lib/freeswitch/recordings}
       - ./runtime/fax:/var/spool/fax
     healthcheck:
       test:

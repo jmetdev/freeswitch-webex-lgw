@@ -1,4 +1,4 @@
-# Curated FreeSWITCH modules for SIP trunking, fax, ESL, and WAV recording.
+# Curated FreeSWITCH modules for SIP trunking, fax, ESL, conferences, and WAV recording.
 # No mod_signalwire, mod_av, mod_verto, or other heavy/unused modules.
 
 loggers/mod_console
@@ -16,6 +16,7 @@ applications/mod_commands
 applications/mod_dptools
 applications/mod_expr
 applications/mod_hash
+applications/mod_conference
 applications/mod_spandsp
 
 formats/mod_sndfile

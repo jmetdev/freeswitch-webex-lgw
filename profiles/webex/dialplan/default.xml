@@ -9,6 +9,23 @@
     </extension>
 
     <!--
+      Alert Office conference. Room name is the dialed number so ESL json_list
+      and recordings (2111-YYYYMMDD-HHMMSS.wav) stay numeric.
+    -->
+    <extension name="alert_office_2111">
+      <condition field="destination_number" expression="^2111$">
+        <action application="set" data="callee_id_name=Alert Office"/>
+        <action application="set" data="callee_id_number=2111"/>
+        <action application="set" data="effective_callee_id_name=Alert Office"/>
+        <action application="set" data="effective_callee_id_number=2111"/>
+        <action application="export" data="sip_h_P-Asserted-Identity=&quot;Alert Office&quot; &lt;sip:2111@$${external_sip_ip}&gt;"/>
+        <action application="answer"/>
+        <action application="send_display" data="Alert Office|2111"/>
+        <action application="conference" data="2111@default"/>
+      </condition>
+    </extension>
+
+    <!--
       Outbound to Webex Calling. The From URI must carry the same ;otg= tag the
       gateway puts on REGISTER and OPTIONS (from-domain in webex_gateway.xml).
       That tag, not a DNS name, is how Webex associates the call with the trunk.
@@ -55,14 +72,44 @@
     </extension>
 
     <!--
-      Inbound from Webex Calling. The gateway's "extension" param rewrites the
-      destination to the Line/Port; the original dialed number remains in
-      ${sip_req_user} / ${sip_to_user}. Routes to the health-check tone for
-      trunk validation — replace the transfer target with real routing.
+      Inbound from Webex Calling. The gateway's "extension" param rewrites
+      destination_number to the Line/Port. The dialed number is ${sip_to_user}
+      / ${sip_req_user} (bare field names like sip_to_user do not work here).
+      Transfer that number into default so 2111 hits the conference instead of
+      inbound_fax.
     -->
+    <extension name="alert_office_2111_inbound">
+      <condition field="destination_number" expression="^2111$">
+        <action application="transfer" data="2111 XML default"/>
+      </condition>
+    </extension>
+    <extension name="alert_office_2111_to_user">
+      <condition field="${sip_to_user}" expression="^2111$">
+        <action application="set" data="callee_id_name=Alert Office"/>
+        <action application="set" data="callee_id_number=2111"/>
+        <action application="set" data="effective_callee_id_name=Alert Office"/>
+        <action application="set" data="effective_callee_id_number=2111"/>
+        <action application="export" data="sip_h_P-Asserted-Identity=&quot;Alert Office&quot; &lt;sip:2111@$${external_sip_ip}&gt;"/>
+        <action application="answer"/>
+        <action application="send_display" data="Alert Office|2111"/>
+        <action application="conference" data="2111@default"/>
+      </condition>
+    </extension>
+    <extension name="alert_office_2111_req_user">
+      <condition field="${sip_req_user}" expression="^2111$">
+        <action application="set" data="callee_id_name=Alert Office"/>
+        <action application="set" data="callee_id_number=2111"/>
+        <action application="set" data="effective_callee_id_name=Alert Office"/>
+        <action application="set" data="effective_callee_id_number=2111"/>
+        <action application="export" data="sip_h_P-Asserted-Identity=&quot;Alert Office&quot; &lt;sip:2111@$${external_sip_ip}&gt;"/>
+        <action application="answer"/>
+        <action application="send_display" data="Alert Office|2111"/>
+        <action application="conference" data="2111@default"/>
+      </condition>
+    </extension>
     <extension name="webex_inbound">
       <condition field="destination_number" expression="^$${webex_line_port}$">
-        <action application="transfer" data="$${webex_line_port} XML default"/>
+        <action application="transfer" data="${sip_to_user} XML default"/>
       </condition>
     </extension>
   </context>

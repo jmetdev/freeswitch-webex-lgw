@@ -49,10 +49,19 @@ echo "==> Status"
 docker exec "${CONTAINER}" fs_cli -H 127.0.0.1 -P 8021 -p "${ESL_PASSWORD}" -x status
 
 echo "==> Module checks"
-for mod in mod_event_socket mod_spandsp mod_sofia mod_sndfile; do
+for mod in mod_event_socket mod_spandsp mod_sofia mod_sndfile mod_conference; do
   docker exec "${CONTAINER}" fs_cli -H 127.0.0.1 -P 8021 -p "${ESL_PASSWORD}" -x "module_exists ${mod}" | grep -q true
   echo "  ${mod}: OK"
 done
+
+echo "==> conference json_list"
+CONF_LIST="$(docker exec "${CONTAINER}" fs_cli -H 127.0.0.1 -P 8021 -p "${ESL_PASSWORD}" -x "conference json_list")"
+if echo "${CONF_LIST}" | grep -qi 'Command not found'; then
+  echo "ERROR: conference json_list is not available" >&2
+  echo "${CONF_LIST}" >&2
+  exit 1
+fi
+echo "  conference json_list: OK"
 
 echo "==> mod_signalwire must be absent"
 if docker exec "${CONTAINER}" fs_cli -H 127.0.0.1 -P 8021 -p "${ESL_PASSWORD}" -x "module_exists mod_signalwire" | grep -q true; then

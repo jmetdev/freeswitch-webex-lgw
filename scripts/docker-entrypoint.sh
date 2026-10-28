@@ -11,6 +11,18 @@ if [ ! -f "${LIVE_CONFIG}/freeswitch.xml" ]; then
   cp -a "${DEFAULT_CONFIG}/." "${LIVE_CONFIG}/"
 fi
 
+# An existing runtime volume hides the image config. Load mod_conference there
+# too, and overlay conference.conf.xml (auto-record filename for Alert Office).
+MODULES_CONF="${LIVE_CONFIG}/autoload_configs/modules.conf.xml"
+if [ -f "${MODULES_CONF}" ] && ! grep -q 'module="mod_conference"' "${MODULES_CONF}"; then
+  sed -i 's|</modules>|    <load module="mod_conference"/>\n  </modules>|' "${MODULES_CONF}"
+fi
+if [ -f "${DEFAULT_CONFIG}/autoload_configs/conference.conf.xml" ]; then
+  mkdir -p "${LIVE_CONFIG}/autoload_configs"
+  cp -f "${DEFAULT_CONFIG}/autoload_configs/conference.conf.xml" \
+    "${LIVE_CONFIG}/autoload_configs/conference.conf.xml"
+fi
+
 if [ -d "${PROFILE_DIR}" ]; then
   if [ -f "${PROFILE_DIR}/sip_profiles/external/webex_gateway.xml" ]; then
     mkdir -p "${LIVE_CONFIG}/sip_profiles/external"
@@ -98,6 +110,7 @@ if [ -f "${VARS_FILE}" ]; then
   [ -n "${WEBEX_USERNAME:-}" ] && set_var webex_username "${WEBEX_USERNAME}"
   [ -n "${WEBEX_PASSWORD:-}" ] && set_var webex_password "${WEBEX_PASSWORD}"
   [ -n "${WEBEX_OTG:-}" ] && set_var webex_otg "${WEBEX_OTG}"
+  [ -n "${RECORDINGS_DIR:-}" ] && set_var recordings_dir "${RECORDINGS_DIR}"
 fi
 
 # Resolve Webex outbound-proxy SRV (sipconnect hostname → target:8934)
