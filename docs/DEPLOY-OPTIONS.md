@@ -11,4 +11,6 @@ Primary supported path: **Docker Compose + `network_mode: host`** on a single Li
 | Kubernetes `hostNetwork` | Only if the platform already requires K8s (RTP is painful) |
 | Cisco CUBE / vCUBE | Certified LGW with TAC support |
 
-This repository ships Compose, sync scripts, and GHCR images. Other paths are operational choices documented here only.
+This repository ships Compose, sync scripts, and GHCR images. Pull
+`ghcr.io/jmetdev/freeswitch-webex-lgw:latest` on a new host; do not bake VM IPs into the image.
+Other paths are operational choices documented here only.

@@ -4,17 +4,31 @@ Lean FreeSWITCH Docker image for **Webex Calling registration-based trunks** (lo
 
 **Image:** `ghcr.io/jmetdev/freeswitch-webex-lgw`
 
-## Quick start
+## Quick start (new host)
 
 ```bash
+git clone https://github.com/jmetdev/freeswitch-webex-lgw.git
+cd freeswitch-webex-lgw
 cp .env.example .env
-# Fill WEBEX_* and EXTERNAL_*_IP in .env (or edit runtime/config/vars.xml after sync)
-make sync
-docker compose up -d --build   # or pull IMAGE:TAG from GHCR
+# Set ESL_PASSWORD, EXTERNAL_SIP_IP, EXTERNAL_RTP_IP, and WEBEX_*
+mkdir -p runtime/recordings runtime/fax runtime/logs
+docker compose pull
+docker compose up -d
 ./scripts/webex-register-status.sh
 ```
 
+Or build locally with `docker compose up -d --build`. The published image is `ghcr.io/jmetdev/freeswitch-webex-lgw:latest` (linux/amd64 and linux/arm64).
+
 Expect `State    REGED` once Control Hub credentials and the public IP are correct. **REGED is not Control Hub Online.** A registration trunk goes Online only when the From URI is `sip:LINEPORT@REGISTRAR;otg=WEBEX_OTG`. No public DNS name is involved. See [docs/WEBEX-DEPLOY.md](docs/WEBEX-DEPLOY.md).
+
+### Alert Office on the same host
+
+The image includes `mod_conference`. Dialing **2111** from Webex joins conference `2111` (silent while alone, auto-recorded). Connected-party identity is **Alert Office**.
+
+1. In Control Hub, route **2111** to this registration trunk.
+2. Set `ESL_LISTEN_IP` to the host LAN IP or `0.0.0.0`. Do not leave it on `127.0.0.1` if Alert Office is another container.
+3. Point Alert Office `FREESWITCH_ESL_HOST` at that LAN IP, port `8021`, and set `FREESWITCH_ESL_PASSWORD` to the same value as `ESL_PASSWORD`. A compose recreate of Alert Office from a new `.env` will break ESL if those passwords differ.
+4. Share recordings: in this `.env` set `RECORDINGS_HOST_DIR` and `RECORDINGS_CONTAINER_DIR` to the host directory Alert Office mounts as `/recordings` (for example `/opt/alertoffice/recordings`). Recreate this container after changing those variables.
 
 ## Layout
 
@@ -49,7 +63,7 @@ Compose on a VPS is the primary path. Other options (Podman, cloud-init, Ansible
 
 ## Consumers
 
-Projects such as CCC recording portal can deploy this image and add their own dialplan overlays separately — this repo stays Webex-LGW-only.
+Alert Office uses this image for ESL (`conference json_list`, kick-all) and conference recordings. The 2111 dialplan ships in `profiles/webex/`. Other overlays can still be added in `runtime/config` on the host.
 
 From workspace root: `make deploy-webex` (uses `COMPOSE_MODE=pull` and `ghcr.io/jmetdev/freeswitch-webex-lgw:latest` by default).
 

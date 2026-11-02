@@ -1,10 +1,31 @@
 # Webex Calling trunk — standalone FreeSWITCH deploy
 
-Deploy a **dedicated** FreeSWITCH instance for Webex Calling registration trunk testing
-(fax, inbound/outbound voice). This is separate from the recording portal stack on
-`hyetech@172.25.100.83`.
+Deploy a **dedicated** FreeSWITCH instance for a Webex Calling registration trunk
+(fax, inbound/outbound voice, Alert Office conference 2111). The published image is
+`ghcr.io/jmetdev/freeswitch-webex-lgw:latest`.
 
-## Dev host
+## New environment
+
+Any Linux host with a public IPv4, Docker Compose, and host networking:
+
+```bash
+git clone https://github.com/jmetdev/freeswitch-webex-lgw.git /opt/freeswitch-webex-lgw
+cd /opt/freeswitch-webex-lgw
+cp .env.example .env
+# ESL_PASSWORD, EXTERNAL_SIP_IP, EXTERNAL_RTP_IP, WEBEX_* (including WEBEX_OTG)
+mkdir -p runtime/recordings runtime/fax runtime/logs
+docker compose pull
+docker compose up -d
+./scripts/webex-register-status.sh
+```
+
+Do not copy another host's IP into `.env`. Set `EXTERNAL_SIP_IP` and `EXTERNAL_RTP_IP` to **this** host's public IPv4. Open inbound TCP **5071** and UDP **16384–32768**; do not publish ESL **8021**.
+
+Alert Office on the same host: set `ESL_LISTEN_IP` to the LAN IP or `0.0.0.0`, match `FREESWITCH_ESL_PASSWORD` to `ESL_PASSWORD`, route **2111** to this trunk, and set `RECORDINGS_HOST_DIR` / `RECORDINGS_CONTAINER_DIR` to the directory Alert Office mounts as `/recordings`.
+
+The Hostinger and Azure paths below are historical examples, not required targets.
+
+## Dev host (Hostinger)
 
 | Item | Value |
 |------|-------|
@@ -229,8 +250,8 @@ tail -f /opt/freeswitch-webex-lgw/runtime/logs/freeswitch.log
 
 ### Inbound test
 
-With registration up, dial the Line/Port number from Webex. The default dialplan transfers
-to extension `9191` (health-check tone).
+With registration up, dial **2111** from Webex (route that number to this trunk in Control Hub).
+The call joins conference `2111`. Extension `9191` is still a health-check tone.
 
 ### Outbound test
 
@@ -270,10 +291,12 @@ make sync-fs-config   # merges webex_* from runtime/config/vars.xml
 If you need to rotate trunk credentials, edit `runtime/config/vars.xml` on the server
 (or locally), then redeploy or `reloadxml` + `sofia profile external restart`.
 
-## What's left
+## What's left (new environment)
 
-- [ ] Paste Control Hub `webex_*` values into server `vars.xml`, including `webex_otg`
+- [ ] Copy `.env.example` to `.env` and set `ESL_PASSWORD`, `EXTERNAL_*_IP`, and `WEBEX_*` (including `webex_otg`)
+- [ ] `docker compose pull && docker compose up -d` using `ghcr.io/jmetdev/freeswitch-webex-lgw:latest`
 - [ ] Confirm `sofia status gateway webex` → `REGED` and From contains `;otg=<webex_otg>`
 - [ ] Confirm a siptrace shows Webex `OPTIONS` to the public IP and our `200 OK`, then Control Hub **Online**
-- [ ] Place test inbound/outbound calls
-- [ ] Enable and test T.38 fax dialplan
+- [ ] Route **2111** to this trunk; confirm a Webex call joins the conference
+- [ ] Point Alert Office ESL at the host LAN IP with the same `ESL_PASSWORD`; share the recordings directory
+- [ ] Enable and test T.38 fax dialplan if needed
