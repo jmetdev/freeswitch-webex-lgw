@@ -12,14 +12,14 @@ Any Linux host with a public IPv4, Docker Compose, and host networking:
 git clone https://github.com/jmetdev/freeswitch-webex-lgw.git /opt/freeswitch-webex-lgw
 cd /opt/freeswitch-webex-lgw
 cp .env.example .env
-# ESL_PASSWORD, EXTERNAL_SIP_IP, EXTERNAL_RTP_IP, WEBEX_* (including WEBEX_OTG)
+# ESL_PASSWORD and WEBEX_* (including WEBEX_OTG). Leave EXTERNAL_SIP_IP / EXTERNAL_RTP_IP empty.
 mkdir -p runtime/recordings runtime/fax runtime/logs
 docker compose pull
 docker compose up -d
 ./scripts/webex-register-status.sh
 ```
 
-Do not copy another host's IP into `.env`. Set `EXTERNAL_SIP_IP` and `EXTERNAL_RTP_IP` to **this** host's public IPv4. Open inbound TCP **5071** and UDP **16384–32768**; do not publish ESL **8021**.
+Do not put a public IP or FQDN in `.env` or Control Hub. Registration trunks identify with `;otg=` on the From URI; Webex learns the Contact from REGISTER. Leave `EXTERNAL_SIP_IP` and `EXTERNAL_RTP_IP` unset so the entrypoint does not overwrite `local_ip_v4`. Open inbound TCP **5071** and UDP **16384–32768**; do not publish ESL **8021**.
 
 Alert Office on the same host: set `ESL_LISTEN_IP` to the LAN IP or `0.0.0.0`, match `FREESWITCH_ESL_PASSWORD` to `ESL_PASSWORD`, route **2111** to this trunk, and set `RECORDINGS_HOST_DIR` / `RECORDINGS_CONTAINER_DIR` to the directory Alert Office mounts as `/recordings`.
 
@@ -293,7 +293,7 @@ If you need to rotate trunk credentials, edit `runtime/config/vars.xml` on the s
 
 ## What's left (new environment)
 
-- [ ] Copy `.env.example` to `.env` and set `ESL_PASSWORD`, `EXTERNAL_*_IP`, and `WEBEX_*` (including `webex_otg`)
+- [ ] Copy `.env.example` to `.env` and set `ESL_PASSWORD` and `WEBEX_*` (including `webex_otg`). Leave `EXTERNAL_*` empty.
 - [ ] `docker compose pull && docker compose up -d` using `ghcr.io/jmetdev/freeswitch-webex-lgw:latest`
 - [ ] Confirm `sofia status gateway webex` → `REGED` and From contains `;otg=<webex_otg>`
 - [ ] Confirm a siptrace shows Webex `OPTIONS` to the public IP and our `200 OK`, then Control Hub **Online**

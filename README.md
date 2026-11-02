@@ -10,7 +10,7 @@ Lean FreeSWITCH Docker image for **Webex Calling registration-based trunks** (lo
 git clone https://github.com/jmetdev/freeswitch-webex-lgw.git
 cd freeswitch-webex-lgw
 cp .env.example .env
-# Set ESL_PASSWORD, EXTERNAL_SIP_IP, EXTERNAL_RTP_IP, and WEBEX_*
+# Set ESL_PASSWORD and WEBEX_* (including WEBEX_OTG). Leave EXTERNAL_* empty.
 mkdir -p runtime/recordings runtime/fax runtime/logs
 docker compose pull
 docker compose up -d
@@ -19,7 +19,7 @@ docker compose up -d
 
 Or build locally with `docker compose up -d --build`. The published image is `ghcr.io/jmetdev/freeswitch-webex-lgw:latest` (linux/amd64 and linux/arm64).
 
-Expect `State    REGED` once Control Hub credentials and the public IP are correct. **REGED is not Control Hub Online.** A registration trunk goes Online only when the From URI is `sip:LINEPORT@REGISTRAR;otg=WEBEX_OTG`. No public DNS name is involved. See [docs/WEBEX-DEPLOY.md](docs/WEBEX-DEPLOY.md).
+Expect `State    REGED` once Control Hub credentials are in `.env`. **REGED is not Control Hub Online.** A registration trunk goes Online when the From URI is `sip:LINEPORT@REGISTRAR;otg=WEBEX_OTG`. Control Hub does not ask for a public IP or DNS name on this trunk type. See [docs/WEBEX-DEPLOY.md](docs/WEBEX-DEPLOY.md).
 
 ### Alert Office on the same host
 
