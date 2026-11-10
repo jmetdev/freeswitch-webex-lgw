@@ -23,12 +23,15 @@ Expect `State    REGED` once Control Hub credentials are in `.env`. **REGED is n
 
 ### Alert Office on the same host
 
-The image includes `mod_conference`. Dialing **2111** from Webex joins conference `2111` (silent while alone, auto-recorded). Connected-party identity is **Alert Office**.
+The image includes `mod_conference`. Dialing an Alert Office Group extension from Webex joins conference `<extension>` (silent while alone, auto-recorded). Connected-party identity is **Alert Office**.
 
-1. In Control Hub, route **2111** to this registration trunk.
+The image doesn't hard-code any extension. `profiles/webex/dialplan/default.xml` includes `default/*.xml` and `public/*.xml`, and Alert Office writes `alertoffice.xml` into both from its phone groups, then runs `reloadxml`. Until it does, the includes match nothing and the rest of the dial plan loads as usual.
+
+1. In Control Hub, route each Group extension to this registration trunk.
 2. Set `ESL_LISTEN_IP` to the host LAN IP or `0.0.0.0`. Do not leave it on `127.0.0.1` if Alert Office is another container.
 3. Point Alert Office `FREESWITCH_ESL_HOST` at that LAN IP, port `8021`, and set `FREESWITCH_ESL_PASSWORD` to the same value as `ESL_PASSWORD`. A compose recreate of Alert Office from a new `.env` will break ESL if those passwords differ.
 4. Share recordings: in this `.env` set `RECORDINGS_HOST_DIR` and `RECORDINGS_CONTAINER_DIR` to the host directory Alert Office mounts as `/recordings` (for example `/opt/alertoffice/recordings`). Recreate this container after changing those variables.
+5. Let Alert Office write the dial plan: in its `.env` set `FREESWITCH_DIALPLAN_DIR=/freeswitch-dialplan` and `FREESWITCH_DIALPLAN_HOST_DIR` to this deployment's `runtime/config/dialplan` (for example `/opt/freeswitch-webex-lgw/runtime/config/dialplan`). Alert Office compares the dial plan FreeSWITCH loaded with its groups every few minutes and repairs it.
 
 ## Layout
 
@@ -63,7 +66,7 @@ Compose on a VPS is the primary path. Other options (Podman, cloud-init, Ansible
 
 ## Consumers
 
-Alert Office uses this image for ESL (`conference json_list`, kick-all) and conference recordings. The 2111 dialplan ships in `profiles/webex/`. Other overlays can still be added in `runtime/config` on the host.
+Alert Office uses this image for ESL (`conference json_list`, kick-all) and conference recordings. Alert Office writes its Group extension routes into `runtime/config/dialplan/default/` and `public/`, which `profiles/webex/dialplan/default.xml` includes. Other overlays can still be added in `runtime/config` on the host.
 
 From workspace root: `make deploy-webex` (uses `COMPOSE_MODE=pull` and `ghcr.io/jmetdev/freeswitch-webex-lgw:latest` by default).
 

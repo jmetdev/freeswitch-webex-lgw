@@ -1,28 +1,17 @@
 <include>
   <context name="default">
+    <!--
+      Alert Office writes default/alertoffice.xml from its phone groups: dialing
+      a Group extension answers as Alert Office and joins conference <ext>@default.
+      It has to come first so nothing below catches a Group extension.
+    -->
+    <X-PRE-PROCESS cmd="include" data="default/*.xml"/>
+
     <extension name="health_check">
       <condition field="destination_number" expression="^9191$">
         <action application="answer"/>
         <action application="playback" data="tone_stream://%(2000,4000,440,480)"/>
         <action application="hangup"/>
-      </condition>
-    </extension>
-
-    <!--
-      Alert Office conference. Room name stays 2111 so ESL json_list
-      and recordings (2111-YYYYMMDD-HHMMSS.wav) stay numeric.
-      7716 is the Webex extension for the same room.
-    -->
-    <extension name="alert_office_2111">
-      <condition field="destination_number" expression="^(2111|7716)$">
-        <action application="set" data="callee_id_name=Alert Office"/>
-        <action application="set" data="callee_id_number=2111"/>
-        <action application="set" data="effective_callee_id_name=Alert Office"/>
-        <action application="set" data="effective_callee_id_number=2111"/>
-        <action application="export" data="sip_h_P-Asserted-Identity=&quot;Alert Office&quot; &lt;sip:2111@$${external_sip_ip}&gt;"/>
-        <action application="answer"/>
-        <action application="send_display" data="Alert Office|2111"/>
-        <action application="conference" data="2111@default"/>
       </condition>
     </extension>
 
@@ -73,41 +62,14 @@
     </extension>
 
     <!--
-      Inbound from Webex Calling. The gateway's "extension" param rewrites
-      destination_number to the Line/Port. The dialed number is ${sip_to_user}
-      / ${sip_req_user} (bare field names like sip_to_user do not work here).
-      Transfer that number into default so 2111 or 7716 hits the conference
-      instead of inbound_fax.
+      Inbound from Webex Calling, written by Alert Office to public/alertoffice.xml.
+      The gateway's "extension" param rewrites destination_number to the Line/Port,
+      so each Group extension is matched in ${sip_to_user} and ${sip_req_user} too
+      (bare field names like sip_to_user do not work here). It has to come before
+      webex_inbound, or Group extensions hit inbound_fax instead of the conference.
     -->
-    <extension name="alert_office_2111_inbound">
-      <condition field="destination_number" expression="^(2111|7716)$">
-        <action application="transfer" data="2111 XML default"/>
-      </condition>
-    </extension>
-    <extension name="alert_office_2111_to_user">
-      <condition field="${sip_to_user}" expression="^(2111|7716)$">
-        <action application="set" data="callee_id_name=Alert Office"/>
-        <action application="set" data="callee_id_number=2111"/>
-        <action application="set" data="effective_callee_id_name=Alert Office"/>
-        <action application="set" data="effective_callee_id_number=2111"/>
-        <action application="export" data="sip_h_P-Asserted-Identity=&quot;Alert Office&quot; &lt;sip:2111@$${external_sip_ip}&gt;"/>
-        <action application="answer"/>
-        <action application="send_display" data="Alert Office|2111"/>
-        <action application="conference" data="2111@default"/>
-      </condition>
-    </extension>
-    <extension name="alert_office_2111_req_user">
-      <condition field="${sip_req_user}" expression="^(2111|7716)$">
-        <action application="set" data="callee_id_name=Alert Office"/>
-        <action application="set" data="callee_id_number=2111"/>
-        <action application="set" data="effective_callee_id_name=Alert Office"/>
-        <action application="set" data="effective_callee_id_number=2111"/>
-        <action application="export" data="sip_h_P-Asserted-Identity=&quot;Alert Office&quot; &lt;sip:2111@$${external_sip_ip}&gt;"/>
-        <action application="answer"/>
-        <action application="send_display" data="Alert Office|2111"/>
-        <action application="conference" data="2111@default"/>
-      </condition>
-    </extension>
+    <X-PRE-PROCESS cmd="include" data="public/*.xml"/>
+
     <extension name="webex_inbound">
       <condition field="destination_number" expression="^$${webex_line_port}$">
         <action application="transfer" data="${sip_to_user} XML default"/>
