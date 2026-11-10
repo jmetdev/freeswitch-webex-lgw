@@ -40,6 +40,8 @@
     <variables>
       <variable name="rtp_secure_media" value="mandatory:AES_CM_128_HMAC_SHA1_80" direction="outbound"/>
       <variable name="rtp_secure_media" value="mandatory:AES_CM_128_HMAC_SHA1_80" direction="inbound"/>
+      <variable name="ignore_sdp_ice" value="true" direction="inbound"/>
+      <variable name="ignore_sdp_ice" value="true" direction="outbound"/>
     </variables>
   </gateway>
 </include>
