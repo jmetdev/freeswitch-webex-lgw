@@ -40,6 +40,15 @@
     <variables>
       <variable name="rtp_secure_media" value="mandatory:AES_CM_128_HMAC_SHA1_80" direction="outbound"/>
       <variable name="rtp_secure_media" value="mandatory:AES_CM_128_HMAC_SHA1_80" direction="inbound"/>
+      <!-- Keep ignore_sdp_ice. Webex media optimization offers ICE candidates and
+           expects an ICE-lite gateway like CUBE. Without this, FreeSWITCH answers
+           with full ICE as the controlling agent (STUN 487 Role Conflict) and
+           never answers checks on the RTCP component, so the phone's ICE fails
+           and it never sends RTP: callers can't hear each other and recordings
+           hold only comfort noise and join beeps. With it, FreeSWITCH answers
+           with plain SDP and Webex sends media through the relay in c=.
+           ice_lite=true plus rtcp_audio_interval_msec was tried and still gave
+           one-way audio. -->
       <variable name="ignore_sdp_ice" value="true" direction="inbound"/>
       <variable name="ignore_sdp_ice" value="true" direction="outbound"/>
     </variables>
