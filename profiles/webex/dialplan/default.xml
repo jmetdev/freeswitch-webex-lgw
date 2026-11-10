@@ -9,11 +9,12 @@
     </extension>
 
     <!--
-      Alert Office conference. Room name is the dialed number so ESL json_list
+      Alert Office conference. Room name stays 2111 so ESL json_list
       and recordings (2111-YYYYMMDD-HHMMSS.wav) stay numeric.
+      7716 is the Webex extension for the same room.
     -->
     <extension name="alert_office_2111">
-      <condition field="destination_number" expression="^2111$">
+      <condition field="destination_number" expression="^(2111|7716)$">
         <action application="set" data="callee_id_name=Alert Office"/>
         <action application="set" data="callee_id_number=2111"/>
         <action application="set" data="effective_callee_id_name=Alert Office"/>
@@ -75,16 +76,16 @@
       Inbound from Webex Calling. The gateway's "extension" param rewrites
       destination_number to the Line/Port. The dialed number is ${sip_to_user}
       / ${sip_req_user} (bare field names like sip_to_user do not work here).
-      Transfer that number into default so 2111 hits the conference instead of
-      inbound_fax.
+      Transfer that number into default so 2111 or 7716 hits the conference
+      instead of inbound_fax.
     -->
     <extension name="alert_office_2111_inbound">
-      <condition field="destination_number" expression="^2111$">
+      <condition field="destination_number" expression="^(2111|7716)$">
         <action application="transfer" data="2111 XML default"/>
       </condition>
     </extension>
     <extension name="alert_office_2111_to_user">
-      <condition field="${sip_to_user}" expression="^2111$">
+      <condition field="${sip_to_user}" expression="^(2111|7716)$">
         <action application="set" data="callee_id_name=Alert Office"/>
         <action application="set" data="callee_id_number=2111"/>
         <action application="set" data="effective_callee_id_name=Alert Office"/>
@@ -96,7 +97,7 @@
       </condition>
     </extension>
     <extension name="alert_office_2111_req_user">
-      <condition field="${sip_req_user}" expression="^2111$">
+      <condition field="${sip_req_user}" expression="^(2111|7716)$">
         <action application="set" data="callee_id_name=Alert Office"/>
         <action application="set" data="callee_id_number=2111"/>
         <action application="set" data="effective_callee_id_name=Alert Office"/>
